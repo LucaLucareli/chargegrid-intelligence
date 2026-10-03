@@ -1,6 +1,6 @@
 # ⚡ ChargeGrid Intelligence — Sistema de Gerenciamento de Recarga
 
-**Disciplina:** Data Structure and Algorithms 
+**Disciplina:** Data Structure and Algorithms · **Sprint 4 — Demonstração e Defesa Técnica**
 
 ## Integrantes
 | NOME | RM |
@@ -13,97 +13,80 @@
 
 ---
 
-## 📋 Descrição
+## Descrição
 
-O **ChargeGrid Intelligence** é um sistema de terminal em Python que simula a operação inteligente de um eletroposto com múltiplos pontos de carregamento simultâneos. Na **Sprint 3**, o sistema evoluiu para uma arquitetura modular baseada no conceito **MVC (Model-View-Controller)** e Padrões de Projeto (**Singleton**, **Facade**). Além do controle dinâmico de potência (Power Management) e tarifação variável, o programa agora gerencia o histórico de sessões utilizando **Classes**, oferecendo funcionalidades nativas de **Busca Sequencial** e **Ordenação (Bubble Sort)**.
+Simulação de um eletroposto com 4 pontos de recarga (44 kW). Na Sprint 4 o sistema virou uma aplicação web:
 
----
+- **Backend:** API REST em **Flask** com as regras de negócio (Power Management, tarifa dinâmica), a lista de sessões em memória e os algoritmos de **busca** (Binária e Linear) e **ordenação** (Merge Sort e Bubble Sort), todos escritos do zero.
+- **Frontend:** HTML + CSS + JavaScript puro, que chama a API com `fetch()`.
 
 ## ▶️ Como executar
 
-Requisito: 
-* Python 3.10+
-* Pandas
-
 ```bash
-python main.py
-```
-```bash
-pip install pandas
+python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python backend/app.py
 ```
 
----
+Depois abra **http://127.0.0.1:5000** (o Flask serve o frontend). Para ter dados na hora, clique em **"Cenário demo"**.
 
-## 🗂️ Estrutura do código (MVC + Design Patterns)
+Testes: `python backend/tests/test_app.py -v`
 
-O projeto foi refatorado em múltiplos módulos para garantir coesão e baixo acoplamento:
+> ⚠️ A API não tem autenticação e escuta apenas em `127.0.0.1`. Serve para demonstração acadêmica e não deve ser exposta na internet.
+
+## Estrutura
 
 ```text
-├── config.py          → Constantes globais (tarifas, limiares, tipos de veículo/usuário).
-├── models.py          → Camada Model: Classe Sessao e EstacaoRepository (Singleton).
-├── algorithms.py      → Algoritmos estruturais: Busca Sequencial e Bubble Sort.
-├── protocols.py       → Mocks de integração: Funções OCPP 1.6 e MODBUS.
-├── services.py        → Camada Service (Facade): Regras de negócio (Power Management, tarifas, simulação).
-├── ui.py              → Camada View/UI: Formatação de terminal, menus, validação de inputs e relatórios.
-└── main.py            → Camada Controller: Laço principal (while True) e orquestração do menu principal.
+backend/
+├── app.py         → Controller: Flask (Application Factory + Blueprint /api), tratamento de erros
+├── services.py    → Facade ServicoRecarga: regras de negócio, estatísticas, resumo
+├── algorithms.py  → Merge Sort, Bubble Sort, Busca Binária, Busca Linear (do zero)
+├── models.py      → dataclass Sessao + lista global HISTORICO_SESSOES + Repository Singleton
+├── protocols.py   → mensagens OCPP 1.6 simuladas (viram eventos de telemetria)
+├── config.py      → constantes (tarifas, limiares, veículos)
+└── tests/         → 15 testes unittest (algoritmos + API)
+frontend/
+├── index.html · style.css · script.js
 ```
 
----
+## Rotas da API
 
-## 📐 Padrões de Projeto e Estruturas Utilizadas
-
-| Estrutura/Padrão | Uso no sistema |
-|---|---|
-| **MVC** | Separação física das responsabilidades (Modelos de dados, Interface e Controle). |
-| **Singleton** | A classe `EstacaoRepository` garante uma instância única global para o estado dos pontos e o histórico de recargas. |
-| **Facade** | A classe `ServicoRecarga` centraliza e esconde as chamadas complexas de negócio para simplificar a camada de interface. |
-| **Classe Orientada a Objetos** | A classe `Sessao` tipifica e encapsula os dados unificados da recarga. |
-| **Lista de Objetos** | O histórico agora armazena instâncias de objetos `Sessao` em vez de dicionários. |
-
----
-
-## 🧠 Algoritmos Implementados (Sprint 3)
-
-### Busca Sequencial `O(n)`
-Utilizada na opção do menu "Buscar sessão (Busca Sequencial)". O sistema varre iterativamente a lista de instâncias da classe `Sessao` comparando o ID informado pelo usuário. Em um cenário real, o tempo de busca cresce linearmente conforme a quantidade de sessões cadastradas.
-
-### Bubble Sort `O(n²)`
-Utilizado na opção do menu "Ordenar sessões". Permite ordenar in-place o histórico na memória sem o uso da função `.sort()`, dando ao usuário a escolha do critério:
-- 1: Por ID
-- 2: Por Energia consumida
-- 3: Por Custo total da sessão
-- 4: Por Tempo de duração (recarga)
-
----
-
-## ⚙️ Lógica de decisão e controle (Business Rules)
-
-### Power Management (controle de demanda)
-| Nível | Demanda total | Potência concedida |
+| Método | Rota | Ação |
 |---|---|---|
-| Normal | < 80% (< 35,2 kW) | 100% do solicitado |
-| Alerta | 80–95% (35,2–41,8 kW) | 70% do solicitado |
-| Crítico | > 95% (> 41,8 kW) | 50% do solicitado |
+| POST | `/api/sessoes` | Cadastrar sessão |
+| GET | `/api/sessoes?status=` | Listar todas |
+| GET | `/api/sessoes/<id>` | Buscar por ID (binária) |
+| GET | `/api/sessoes/busca?chave=id\|cliente&valor=&algoritmo=binaria\|linear` | Buscar |
+| POST | `/api/sessoes/<id>/encerrar` | Encerrar (simula a recarga e calcula a tarifa) |
+| GET | `/api/sessoes/ordenar?criterio=id\|cliente\|energia\|custo\|tempo&ordem=asc\|desc&algoritmo=merge\|bubble` | Ordenar |
+| GET | `/api/estatisticas` | Estatísticas |
+| GET | `/api/tarifas?hora=&tipo_usuario=&energia_kwh=` | Tabela de tarifas e simulador |
+| GET | `/api/resumo` · `/api/resumo/csv` | Resumo final · exportar CSV |
+| GET | `/api/estacao` · `/api/eventos` · `/api/config` | Painel, telemetria OCPP, catálogos |
+| POST | `/api/demo` · `/api/reset` | Cenário de demonstração · limpar memória |
 
-### Tarifação dinâmica
-| Fator | Regra |
-|---|---|
-| Horário off-peak (0h–5h) | R$ 0,90/kWh |
-| Horário normal | R$ 1,20/kWh |
-| Horário de ponta (18h–20h) | R$ 1,85/kWh |
-| Assinante | Desconto de 15% sobre o custo de energia |
-| Frota Corporativa | Teto na tarifa off-peak, independente do horário |
-| Alta demanda (> 80%) | Acréscimo de +10% (exceto Frota) |
+## Padrões de projeto
 
----
+| Camada | Padrão | Onde |
+|---|---|---|
+| Backend | MVC | `models` / `services` / `app` + frontend como View |
+| Backend | Singleton | `EstacaoRepository` (estado único e thread-safe) |
+| Backend | Facade | `ServicoRecarga` |
+| Backend | Strategy | `CRITERIOS` (chaves de ordenação) e `ALGORITMOS_ORDENACAO` |
+| Backend | Application Factory + Blueprint | `create_app()` e `api` |
+| Frontend | Gateway/Facade | `ApiClient` (todo `fetch` passa por ele) |
+| Frontend | Observer | `Store` (componentes assinam o estado) |
+| Frontend | Singleton | `Toast`, `Modal` |
+| Frontend | Strategy | Views escolhidas pelo `Router` |
 
-## 🎨 Diferenciais do Projeto
+## Algoritmos e complexidade
 
-- **Arquitetura Limpa e Escalável** — Modularização avançada dividindo o software em 7 arquivos python especialistas.
-- **Implementação Manual de Algoritmos** — Bubble Sort e Sequential Search codificados estruturalmente em Python para fins acadêmicos e analíticos.
-- **Análise de Complexidade** — Relatório anexo demonstrando a relação Big-O dos algoritmos desenvolvidos.
-- **Estatísticas Computadas** — Cálculo iterativo de ticket médio, faturamento e rastreamento de maiores/menores consumos.
-- **Power Management Automático** — Redução preventiva de potência baseada na demanda global do transformador.
-- **Telemetria e Protocolos (OCPP/MODBUS)** — Logs detalhados com a estrutura de mensagens oficiais da indústria de mobilidade elétrica.
-- **Relatórios em Excel** — Consolidação e exportação massiva das sessões geradas usando a biblioteca `pandas`.
-# chargegrid-intelligence
+| Operação | Algoritmo | Tempo | Espaço |
+|---|---|---|---|
+| Ordenar (principal) | Merge Sort (estável) | O(n log n) em todos os casos | O(n) |
+| Ordenar (comparativo) | Bubble Sort com parada antecipada | O(n²) · melhor caso O(n) | O(1) |
+| Buscar por ID | Busca Binária | O(log n) | O(1) |
+| Buscar por cliente | Busca Linear (substring) | O(n) | O(k) resultados |
+| Cadastrar | `append` | O(1) amortizado | — |
+
+A interface mostra, a cada busca ou ordenação, o número real de comparações ao lado dos valores teóricos n·log₂n e n².

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ChargeGrid Intelligence — gerenciamento inteligente de sessões de recarga de veículos elétricos." />
+  <title>ChargeGrid Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+  <div class="app">
+    <!-- ═════════════ SIDEBAR ═════════════ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand__logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+        </div>
+        <div>
+          <strong>ChargeGrid</strong>
+          <span>Intelligence</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Navegação principal">
+        <button class="nav__item is-active" data-view="dashboard">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+          Painel
+        </button>
+        <button class="nav__item" data-view="nova">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          Nova sessão
+        </button>
+        <button class="nav__item" data-view="sessoes">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v2H3V5zm0 6h18v2H3v-2zm0 6h18v2H3v-2z"/></svg>
+          Sessões
+        </button>
+        <button class="nav__item" data-view="tarifas">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h3v11H5V9zm5.5-5h3v16h-3V4zM16 13h3v7h-3v-7z"/></svg>
+          Estatísticas & Tarifas
+        </button>
+        <button class="nav__item" data-view="resumo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8 13h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>
+          Resumo final
+        </button>
+      </nav>
+
+      <div class="sidebar__footer">
+        <div class="api-status" id="apiStatus" role="status">
+          <span class="dot"></span><span class="label">Conectando…</span>
+        </div>
+        <small>Sprint 4 · FIAP · DSA</small>
+      </div>
+    </aside>
+
+    <!-- ═════════════ MAIN ═════════════ -->
+    <main class="main" id="conteudo" tabindex="-1">
+      <header class="topbar">
+        <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+        </button>
+        <div>
+          <h1 id="viewTitle">Painel do eletroposto</h1>
+          <p class="muted" id="viewSubtitle">Monitoramento em tempo real dos pontos de recarga</p>
+        </div>
+        <div class="topbar__actions">
+          <button class="btn btn--ghost" id="btnDemo" title="Popula a memória com um cenário de exemplo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            Cenário demo
+          </button>
+          <button class="btn btn--danger-ghost" id="btnReset" title="Apaga todas as sessões da memória">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+            Resetar
+          </button>
+        </div>
+      </header>
+
+      <!-- ─────────── VIEW: DASHBOARD ─────────── -->
+      <section class="view is-visible" id="view-dashboard" aria-labelledby="viewTitle">
+        <div class="kpis" id="kpis"></div>
+
+        <div class="grid grid--dash">
+          <article class="card gauge-card">
+            <header class="card__header">
+              <h2>Demanda do transformador</h2>
+              <span class="badge" id="nivelBadge">—</span>
+            </header>
+            <div class="gauge" id="gauge"></div>
+            <ul class="legend">
+              <li><span class="sw sw--ok"></span>Normal &lt; 80%</li>
+              <li><span class="sw sw--warn"></span>Alerta 80–95% (70%)</li>
+              <li><span class="sw sw--crit"></span>Crítico &gt; 95% (50%)</li>
+            </ul>
+          </article>
+
+          <article class="card points-card">
+            <header class="card__header">
+              <h2>Pontos de recarga</h2>
+              <button class="btn btn--primary btn--sm" data-goto="nova">+ Nova sessão</button>
+            </header>
+            <div class="points" id="points"></div>
+          </article>
+
+          <article class="card events-card">
+            <header class="card__header">
+              <h2>Telemetria OCPP 1.6</h2>
+              <span class="pulse" aria-hidden="true"></span>
+            </header>
+            <ol class="events" id="events" aria-live="polite"></ol>
+          </article>
+        </div>
+      </section>
+
+      <!-- ─────────── VIEW: NOVA SESSÃO ─────────── -->
+      <section class="view" id="view-nova" hidden>
+        <div class="grid grid--form">
+          <form class="card form" id="formSessao" novalidate>
+            <header class="card__header"><h2>Cadastrar sessão de recarga</h2></header>
+
+            <div class="field">
+              <label for="cliente">Nome do cliente</label>
+              <input id="cliente" name="cliente" type="text" minlength="2" maxlength="60" placeholder="Ex.: Maria Oliveira" required autocomplete="off" />
+            </div>
+
+            <fieldset class="field">
+              <legend>Tipo de usuário</legend>
+              <div class="segmented" id="tiposUsuario"></div>
+            </fieldset>
+
+            <fieldset class="field">
+              <legend>Veículo</legend>
+              <div class="vehicles" id="veiculos"></div>
+            </fieldset>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="socInicial">SOC inicial <output id="socInicialOut">20%</output></label>
+                <input id="socInicial" name="soc_inicial" type="range" min="0" max="99" value="20" />
+              </div>
+              <div class="field">
+                <label for="socAlvo">SOC desejado <output id="socAlvoOut">80%</output></label>
+                <input id="socAlvo" name="soc_alvo" type="range" min="1" max="100" value="80" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="potencia">Potência solicitada <output id="potenciaOut">7.4 kW</output></label>
+              <input id="potencia" name="potencia_kw" type="range" min="3.7" max="7.4" step="0.1" value="7.4" />
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="hora">Hora de início</label>
+                <select id="hora" name="hora_inicio"></select>
+              </div>
+              <div class="field">
+                <label for="ponto">Ponto</label>
+                <select id="ponto" name="ponto"></select>
+              </div>
+            </div>
+
+            <label class="switch">
+              <input type="checkbox" id="encerrarAgora" name="encerrar_agora" />
+              <span class="switch__track" aria-hidden="true"></span>
+              Simular e encerrar imediatamente
+            </label>
+
+            <p class="form__error" id="formError" role="alert"></p>
+
+            <button type="submit" class="btn btn--primary btn--lg" id="btnCadastrar">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+              Iniciar recarga
+            </button>
+          </form>
+
+          <aside class="card preview" aria-live="polite">
+            <header class="card__header"><h2>Prévia da sessão</h2></header>
+            <div id="preview"></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ─────────── VIEW: SESSÕES ─────────── -->
+      <section class="view" id="view-sessoes" hidden>
+        <div class="toolbar card">
+          <form class="toolbar__group" id="formBusca" role="search">
+            <h3>Buscar</h3>
+            <label class="sr-only" for="buscaChave">Chave</label>
+            <select id="buscaChave">
+              <option value="id">por ID</option>
+              <option value="cliente">por cliente</option>
+            </select>
+            <label class="sr-only" for="buscaAlgoritmo">Algoritmo de busca</label>
+            <select id="buscaAlgoritmo">
+              <option value="binaria">Binária · O(log n)</option>
+              <option value="linear">Linear · O(n)</option>
+            </select>
+            <div class="input-icon">
+              <label class="sr-only" for="buscaValor">Valor</label>
+              <input id="buscaValor" type="search" placeholder="Ex.: 7 ou CG-0007" />
+            </div>
+            <button class="btn btn--primary" type="submit">Buscar</button>
+          </form>
+
+          <form class="toolbar__group" id="formOrdenar">
+            <h3>Ordenar</h3>
+            <label class="sr-only" for="ordCriterio">Critério</label>
+            <select id="ordCriterio">
+              <option value="id">ID</option>
+              <option value="cliente">Cliente</option>
+              <option value="energia">Energia</option>
+              <option value="custo">Custo</option>
+              <option value="tempo">Tempo</option>
+            </select>
+            <label class="sr-only" for="ordOrdem">Ordem</label>
+            <select id="ordOrdem">
+              <option value="asc">Crescente ↑</option>
+              <option value="desc">Decrescente ↓</option>
+            </select>
+            <label class="sr-only" for="ordAlgoritmo">Algoritmo de ordenação</label>
+            <select id="ordAlgoritmo">
+              <option value="merge">Merge Sort · O(n log n)</option>
+              <option value="bubble">Bubble Sort · O(n²)</option>
+            </select>
+            <button class="btn btn--primary" type="submit">Ordenar</button>
+          </form>
+          <button class="btn btn--ghost" id="btnLimparFiltro" type="button">Limpar</button>
+        </div>
+
+        <div class="algo-panel" id="algoPanel" hidden></div>
+
+        <article class="card">
+          <header class="card__header">
+            <h2 id="tabelaTitulo">Todas as sessões</h2>
+            <div class="chips" id="filtroStatus" role="group" aria-label="Filtrar por status">
+              <button class="chip is-active" data-status="todas">Todas</button>
+              <button class="chip" data-status="ativa">Ativas</button>
+              <button class="chip" data-status="encerrada">Encerradas</button>
+            </div>
+          </header>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th><th scope="col">Cliente</th><th scope="col">Veículo</th>
+                  <th scope="col">Ponto</th><th scope="col">Potência</th><th scope="col">Energia</th>
+                  <th scope="col">Tempo</th><th scope="col">Custo</th><th scope="col">Status</th>
+                  <th scope="col"><span class="sr-only">Ações</span></th>
+                </tr>
+              </thead>
+              <tbody id="tabelaSessoes"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <!-- ─────────── VIEW: TARIFAS & ESTATÍSTICAS ─────────── -->
+      <section class="view" id="view-tarifas" hidden>
+        <div class="kpis" id="statsKpis"></div>
+        <div class="grid grid--2">
+          <article class="card">
+            <header class="card__header"><h2>Tarifação dinâmica</h2><span class="badge" id="periodoAtual"></span></header>
+            <div class="tariffs" id="tarifas"></div>
+            <ul class="rules" id="regras"></ul>
+          </article>
+
+          <article class="card">
+            <header class="card__header"><h2>Simulador de tarifa</h2></header>
+            <form class="sim" id="formSimulador">
+              <div class="field-row">
+                <div class="field">
+                  <label for="simHora">Hora</label>
+                  <select id="simHora"></select>
+                </div>
+                <div class="field">
+                  <label for="simTipo">Usuário</label>
+                  <select id="simTipo"></select>
+                </div>
+                <div class="field">
+                  <label for="simEnergia">Energia (kWh)</label>
+                  <input id="simEnergia" type="number" min="0.1" max="500" step="0.1" value="30" />
+                </div>
+              </div>
+              <button class="btn btn--primary" type="submit">Calcular</button>
+            </form>
+            <div id="simResultado" aria-live="polite"></div>
+          </article>
+
+          <article class="card">
+            <header class="card__header"><h2>Receita por tipo de usuário</h2></header>
+            <div class="bars" id="barsUsuario"></div>
+          </article>
+
+          <article class="card">
+            <header class="card__header"><h2>Sessões por período tarifário</h2></header>
+            <div class="bars" id="barsPeriodo"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ─────────── VIEW: RESUMO ─────────── -->
+      <section class="view" id="view-resumo" hidden>
+        <div class="report-actions">
+          <button class="btn btn--ghost" id="btnPrint">Imprimir / PDF</button>
+          <a class="btn btn--primary" id="btnCsv" href="#" download>Exportar CSV</a>
+        </div>
+        <div id="resumo"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ═════════════ MODAL ═════════════ -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="icon-btn modal__close" data-close aria-label="Fechar">✕</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- ═════════════ TOASTS ═════════════ -->
+  <div class="toasts" id="toasts" aria-live="assertive" aria-atomic="true"></div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
